@@ -1,0 +1,37 @@
+name: Deploy React App
+
+on:
+  push:
+    branches:
+      - main # Cambia 'main' por la rama que desees desplegar
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+
+    steps:
+      # Checkout del repositorio
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Configurar Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # Instalar dependencias
+      - name: Install dependencies
+        run: npm install
+
+      # Construir la aplicación
+      - name: Build React App
+        run: npm run build
+
+      # Desplegar en el servidor local
+      - name: Deploy to server
+        run: |
+          rm -rf C:\inetpub\deplyreact\* # Elimina archivos antiguos
+          cp -R build/* C:\inetpub\deplyreact\ # Copia nuevos archivos
+        env:
+          DEPLOY_PATH: /var/www/html/react-app
