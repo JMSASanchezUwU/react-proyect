@@ -23,7 +23,6 @@ jobs:
       # Backup actual
       - name: Backup current build
         run: |
-          mkdir -p C:\inetpub\backupReact-App\
           rm -rf C:\inetpub\backupReact-App\*
           cp -R C:\inetpub\deplyreact\* C:\inetpub\backupReact-App\
 
