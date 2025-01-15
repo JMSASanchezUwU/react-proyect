@@ -1,0 +1,49 @@
+name: Deploy React App with Notifications and Rollback
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+
+    steps:
+      # Checkout del repositorio
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Configurar Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # Backup actual
+      - name: Backup current build
+        run: |
+          mkdir -p C:\inetpub\backupReact-App\
+          rm -rf C:\inetpub\backupReact-App\*
+          cp -R C:\inetpub\deplyreact\* C:\inetpub\backupReact-App\
+
+      # Instalar dependencias
+      - name: Install dependencies
+        run: npm install
+
+      # Construir la aplicación
+      - name: Build React App
+        run: npm run build
+
+      # Desplegar
+      - name: Deploy to server
+        run: |
+          rm -rf C:\inetpub\deplyreact\*
+          cp -R C:\Users\jmsas\Documents\Proyecto practica\react-proyect\dist\* C:\inetpub\deplyreact\
+
+      # Rollback en caso de fallo
+      - name: Rollback on failure
+        if: ${{ failure() }}
+        run: |
+          rm -rf C:\inetpub\deplyreact\*
+          cp -R C:\inetpub\backupReact-App\* C:\inetpub\deplyreact\
