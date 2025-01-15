@@ -1,9 +1,9 @@
-name: Deploy React App
+name: Deploy React App with Notifications and Rollback
 
 on:
   push:
     branches:
-      - main # Cambia 'main' por la rama que desees desplegar
+      - main
 
 jobs:
   build-and-deploy:
@@ -20,6 +20,13 @@ jobs:
         with:
           node-version: '18'
 
+      # Backup actual
+      - name: Backup current build
+        run: |
+          mkdir -p C:\inetpub\backupReact-App\
+          rm -rf C:\inetpub\backupReact-App\*
+          cp -R C:\inetpub\deplyreact\* C:\inetpub\backupReact-App\
+
       # Instalar dependencias
       - name: Install dependencies
         run: npm install
@@ -28,10 +35,15 @@ jobs:
       - name: Build React App
         run: npm run build
 
-      # Desplegar en el servidor local
+      # Desplegar
       - name: Deploy to server
         run: |
-          rm -rf C:\inetpub\deplyreact\* # Elimina archivos antiguos
-          cp -R build/* C:\inetpub\deplyreact\ # Copia nuevos archivos
-        env:
-          DEPLOY_PATH: /var/www/html/react-app
+          rm -rf C:\inetpub\deplyreact\*
+          cp -R C:\Users\jmsas\Documents\Proyecto practica\react-proyect\dist\* C:\inetpub\deplyreact\
+
+      # Rollback en caso de fallo
+      - name: Rollback on failure
+        if: ${{ failure() }}
+        run: |
+          rm -rf C:\inetpub\deplyreact\*
+          cp -R C:\inetpub\backupReact-App\* C:\inetpub\deplyreact\
