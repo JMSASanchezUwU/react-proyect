@@ -23,9 +23,14 @@ jobs:
       # Backup actual
       - name: Backup current build
         run: |
-          mkdir -p C:\inetpub\backupReact-App\
-          rm -rf C:\inetpub\backupReact-App\*
-          cp -R C:\inetpub\deplyreact\* C:\inetpub\backupReact-App\
+          powershell -Command "
+          if (Test-Path 'C:\\inetpub\\backupReact-App\\') {
+            Remove-Item -Path 'C:\\inetpub\\backupReact-App\\*' -Recurse -Force;
+          } else {
+            New-Item -ItemType Directory -Path 'C:\\inetpub\\backupReact-App\\';
+          }
+          Copy-Item -Path 'C:\\inetpub\\deplyreact\\*' -Destination 'C:\\inetpub\\backupReact-App\\' -Recurse -Force;
+          "
 
       # Instalar dependencias
       - name: Install dependencies
@@ -38,12 +43,22 @@ jobs:
       # Desplegar
       - name: Deploy to server
         run: |
-          rm -rf C:\inetpub\deplyreact\*
-          cp -R C:\Users\jmsas\Documents\Proyecto practica\react-proyect\dist\* C:\inetpub\deplyreact\
+          powershell -Command "
+          if (Test-Path 'C:\\inetpub\\deplyreact\\') {
+            Remove-Item -Path 'C:\\inetpub\\deplyreact\\*' -Recurse -Force;
+          }
+          Copy-Item -Path 'C:\\Users\\jmsas\\Documents\\Proyecto practica\\react-proyect\\dist\\*' -Destination 'C:\\inetpub\\deplyreact\\' -Recurse -Force;
+          "
 
       # Rollback en caso de fallo
       - name: Rollback on failure
         if: ${{ failure() }}
         run: |
-          rm -rf C:\inetpub\deplyreact\*
-          cp -R C:\inetpub\backupReact-App\* C:\inetpub\deplyreact\
+          powershell -Command "
+          if (Test-Path 'C:\\inetpub\\backupReact-App\\*') {
+            Remove-Item -Path 'C:\\inetpub\\deplyreact\\*' -Recurse -Force;
+            Copy-Item -Path 'C:\\inetpub\\backupReact-App\\*' -Destination 'C:\\inetpub\\deplyreact\\' -Recurse -Force;
+          } else {
+            Write-Host 'No backup available for rollback.';
+          }
+          "
