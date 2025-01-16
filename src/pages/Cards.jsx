@@ -16,6 +16,11 @@ const Cards = () => {
       title: "Card 3",
       text: "Esta es la tarjeta número 3 con contenido adicional.",
       link: "#"
+    },
+    {
+      title: "Card 4",
+      text: "Esta es la tarjeta número 4 con contenido adicional.",
+      link: "#"
     }
   ];
 
