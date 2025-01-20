@@ -34,11 +34,16 @@ jobs:
 
       # Instalar dependencias
       - name: Install dependencies
-        run: npm install
+        run: |
+          cd "C:\Users\jmsas\Documents\Proyecto practica\react-proyect"
+          npm install
 
       # Construir la aplicación
       - name: Build React App
-        run: npm run build
+        run: |
+          cd "C:\Users\jmsas\Documents\Proyecto practica\react-proyect"
+          npm run build
+
 
       # Desplegar
       - name: Deploy to server
