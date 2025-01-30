@@ -6,6 +6,6 @@ import Estado from './Estado.jsx'
 
 createRoot(document.getElementById('root')).render(
   
-    <App />
+    <Estado />
  ,
 )
