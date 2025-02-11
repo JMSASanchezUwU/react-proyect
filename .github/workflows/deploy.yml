@@ -12,9 +12,7 @@ jobs:
       security-events: write  # Necesario para subir resultados de CodeQL
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3  # Versión actualizada de checkout
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v3
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
