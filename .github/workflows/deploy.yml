@@ -28,8 +28,8 @@ jobs:
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3  # Versión actualizada
-        with:
-          upload: true  # Asegura la subida de resultados
+        # with:
+        #   upload: true  # Asegura la subida de resultados
 
   build-and-deploy:
     runs-on: self-hosted
