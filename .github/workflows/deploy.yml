@@ -32,6 +32,7 @@ jobs:
 
   build-and-deploy:
     runs-on: self-hosted
+    needs: [codeql-analysis]
 
     steps:
       # Checkout del repositorio
