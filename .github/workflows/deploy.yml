@@ -9,6 +9,7 @@ jobs:
   codeql-analysis:
     runs-on: ubuntu-latest
     permissions:
+      contents: read      # Permiso necesario para acceder a los contenidos del repositorio
       security-events: write  # Necesario para subir resultados de CodeQL
     steps:
       - name: Checkout repository
