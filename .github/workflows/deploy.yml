@@ -1,86 +1,83 @@
+name: Deploy React App with Security Analysis and Rollback
+
 on:
   push:
     branches:
       - main
 
 jobs:
-  # codeql-analysis:
-  #     runs-on: self-hosted  # Puedes usar runners hospedados por GitHub
-  #     steps:
-  #       - name: Checkout repository
-  #         uses: actions/checkout@v3
-  #         with:
-  #           fetch-depth: 0
-  #       - name: Initialize CodeQL
-  #         uses: github/codeql-action/init@v3  # Usar v3 en lugar de v2
-  #         with:
-  #           languages: javascript
-  #           build-mode: none
-            
-  #       - name: Autobuild
-  #         uses: github/codeql-action/autobuild@v2
-          
-  #       - name: Perform CodeQL Analysis
-  #         uses: github/codeql-action/analyze@v2
-        
+  codeql-analysis:
+    runs-on: self-hosted
+    permissions:
+      security-events: write  # Necesario para subir resultados de CodeQL
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+          build-mode: none  # No necesita compilación para JavaScript
+          dependency-caching: true  # Habilita caché de dependencias
+
+      # Eliminado el paso Autobuild (no necesario para JavaScript)
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3  # Versión actualizada
+        with:
+          upload: true  # Asegura la subida de resultados
+
   build-and-deploy:
     runs-on: self-hosted
+    needs: [codeql-analysis]  # Ejecutar después del análisis de seguridad
+    env:
+      PROJECT_PATH: 'C:\Users\jmsas\Documents\Proyecto practica\react-proyect'
+      DEPLOY_PATH: 'C:\inetpub\deplyreact'
+      BACKUP_PATH: 'C:\inetpub\backupReact-App'
 
     steps:
-      # Checkout del repositorio
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Configurar Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Setup Node.js 18.x
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'  # Habilita caché de dependencias
 
-      # Backup actual
-      - name: Backup current build
+      - name: Backup current deployment
+        shell: pwsh
         run: |
-          powershell -Command "
-          if (Test-Path 'C:\\inetpub\\backupReact-App\\') {
-            Remove-Item -Path 'C:\\inetpub\\backupReact-App\\*' -Recurse -Force;
-          } else {
-            New-Item -ItemType Directory -Path 'C:\\inetpub\\backupReact-App\\';
+          if (Test-Path $env:DEPLOY_PATH) {
+              Remove-Item -Path "$env:BACKUP_PATH\*" -Recurse -Force -ErrorAction SilentlyContinue
+              Copy-Item -Path "$env:DEPLOY_PATH\*" -Destination $env:BACKUP_PATH -Recurse -Force
           }
-          Copy-Item -Path 'C:\\inetpub\\deplyreact\\*' -Destination 'C:\\inetpub\\backupReact-App\\' -Recurse -Force;
-          "
 
-      # Instalar dependencias
       - name: Install dependencies
-        run: |
-          cd "C:\Users\jmsas\Documents\Proyecto practica\react-proyect"
-          npm install
+        working-directory: ${{ env.PROJECT_PATH }}
+        run: npm ci --prefer-offline  # Instalación más limpia y rápida
 
-      # Construir la aplicación
       - name: Build React App
-        run: |
-          cd "C:\Users\jmsas\Documents\Proyecto practica\react-proyect"
-          npm run build
+        working-directory: ${{ env.PROJECT_PATH }}
+        run: npm run build
 
-
-      # Desplegar
-      - name: Deploy to server
+      - name: Deploy to IIS
+        shell: pwsh
         run: |
-          powershell -Command "
-          if (Test-Path 'C:\\inetpub\\deplyreact\\') {
-            Remove-Item -Path 'C:\\inetpub\\deplyreact\\*' -Recurse -Force;
+          if (Test-Path $env:DEPLOY_PATH) {
+              Remove-Item -Path "$env:DEPLOY_PATH\*" -Recurse -Force
           }
-          Copy-Item -Path 'C:\\Users\\jmsas\\Documents\\Proyecto practica\\react-proyect\\dist\\*' -Destination 'C:\\inetpub\\deplyreact\\' -Recurse -Force;
-          "
+          Copy-Item -Path "$env:PROJECT_PATH\dist\*" -Destination $env:DEPLOY_PATH -Recurse -Force
 
-      # Rollback en caso de fallo
       - name: Rollback on failure
         if: ${{ failure() }}
+        shell: pwsh
         run: |
-          powershell -Command "
-          if (Test-Path 'C:\\inetpub\\backupReact-App\\*') {
-            Remove-Item -Path 'C:\\inetpub\\deplyreact\\*' -Recurse -Force;
-            Copy-Item -Path 'C:\\inetpub\\backupReact-App\\*' -Destination 'C:\\inetpub\\deplyreact\\' -Recurse -Force;
+          if (Test-Path "$env:BACKUP_PATH\*") {
+              Remove-Item -Path "$env:DEPLOY_PATH\*" -Recurse -Force
+              Copy-Item -Path "$env:BACKUP_PATH\*" -Destination $env:DEPLOY_PATH -Recurse -Force
+              Write-Host "Rollback completed successfully"
           } else {
-            Write-Host 'No backup available for rollback.';
+              Write-Host "No backup available for rollback"
           }
-          "

@@ -14,6 +14,8 @@ const Home = () => {
             <div className="carousel-caption d-none d-md-block">
               <h5>Slide 1 Title</h5>
               <p>Captivating description for slide 1.</p>
+
+              
             </div>
           </div>
           <div className="carousel-item">
