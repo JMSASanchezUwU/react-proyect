@@ -7,12 +7,15 @@ on:
 
 jobs:
   codeql-analysis:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     permissions:
+      contents: read      # Permiso necesario para acceder a los contenidos del repositorio
       security-events: write  # Necesario para subir resultados de CodeQL
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4  # Versión actualizada de checkout
+        with:
+          fetch-depth: 0
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -26,21 +29,18 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3  # Versión actualizada
         with:
-          upload: true  # Asegura la subida de resultados
+           upload: true  # Asegura la subida de resultados
 
   build-and-deploy:
     runs-on: self-hosted
-    needs: [codeql-analysis]  # Ejecutar después del análisis de seguridad
-    env:
-      PROJECT_PATH: 'C:\Users\jmsas\Documents\Proyecto practica\react-proyect'
-      DEPLOY_PATH: 'C:\inetpub\deplyreact'
-      BACKUP_PATH: 'C:\inetpub\backupReact-App'
+    needs: [codeql-analysis]
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Setup Node.js 18.x
+      # Configurar Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
@@ -81,3 +81,4 @@ jobs:
           } else {
               Write-Host "No backup available for rollback"
           }
+          "
