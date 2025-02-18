@@ -7,7 +7,7 @@ const Home = () => {
   return (
     <div className="container mt-4">
       <h1 className="text-center mb-4">Welcome to my react app :)</h1>
-      <p className="text-center">Texto para demostracion de backups</p>
+      
       <div id="carouselExample" className="carousel slide shadow-lg rounded" data-bs-ride="carousel">
         <div className="carousel-inner">
           <div className="carousel-item active">
