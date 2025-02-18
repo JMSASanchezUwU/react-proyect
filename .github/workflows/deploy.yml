@@ -1,4 +1,4 @@
-name: Deploy React App with Security Analysis and Rollback
+name: Deploy React App with Security Analysis
 
 on:
   push:
@@ -9,11 +9,11 @@ jobs:
   codeql-analysis:
     runs-on: ubuntu-latest
     permissions:
-      contents: read      # Permiso necesario para acceder a los contenidos del repositorio
-      security-events: write  # Necesario para subir resultados de CodeQL
+      contents: read
+      security-events: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4  # Versión actualizada de checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -21,75 +21,60 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: javascript
-          build-mode: none  # No necesita compilación para JavaScript
-          dependency-caching: true  # Habilita caché de dependencias
-
-      # Eliminado el paso Autobuild (no necesario para JavaScript)
+          build-mode: none
+          dependency-caching: true
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3  # Versión actualizada
+        uses: github/codeql-action/analyze@v3
         with:
-           upload: true  # Asegura la subida de resultados
+          upload: true
 
   build-and-deploy:
     runs-on: self-hosted
     needs: [codeql-analysis]
 
     steps:
-      # Checkout del repositorio
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Configurar Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
 
-      # Backup actual
-      - name: Backup current build
+      # Backup histórico con timestamp
+      - name: Create versioned backup
         run: |
-          powershell -Command "
-          if (Test-Path 'C:\\inetpub\\backupReact-App\\') {
-            Remove-Item -Path 'C:\\inetpub\\backupReact-App\\*' -Recurse -Force;
-          } else {
-            New-Item -ItemType Directory -Path 'C:\\inetpub\\backupReact-App\\';
-          }
-          Copy-Item -Path 'C:\\inetpub\\deplyreact\\*' -Destination 'C:\\inetpub\\backupReact-App\\' -Recurse -Force;
-          "
+          $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+          $backupDir = "C:\inetpub\react_backups\$timestamp"
+          New-Item -ItemType Directory -Path $backupDir
+          Copy-Item -Path 'C:\inetpub\deplyreact\*' -Destination $backupDir -Recurse -Force
+        shell: powershell
 
-      # Instalar dependencias
       - name: Install dependencies
         run: |
           cd "C:\Users\jmsas\Documents\Proyecto practica\react-proyect"
           npm install
 
-      # Construir la aplicación
       - name: Build React App
         run: |
           cd "C:\Users\jmsas\Documents\Proyecto practica\react-proyect"
           npm run build
 
-
-      # Desplegar
       - name: Deploy to server
         run: |
           powershell -Command "
-          if (Test-Path 'C:\\inetpub\\deplyreact\\') {
-            Remove-Item -Path 'C:\\inetpub\\deplyreact\\*' -Recurse -Force;
+          if (Test-Path 'C:\inetpub\deplyreact\') {
+              Remove-Item -Path 'C:\inetpub\deplyreact\*' -Recurse -Force
           }
-          Copy-Item -Path 'C:\\Users\\jmsas\\Documents\\Proyecto practica\\react-proyect\\dist\\*' -Destination 'C:\\inetpub\\deplyreact\\' -Recurse -Force;
+          Copy-Item -Path 'C:\Users\jmsas\Documents\Proyecto practica\react-proyect\dist\*' -Destination 'C:\inetpub\deplyreact\' -Recurse -Force
           "
 
-      # Rollback en caso de fallo
-      - name: Rollback on failure
-        if: ${{ failure() }}
+      # Limpieza automática de backups antiguos
+      - name: Cleanup old backups
         run: |
-          powershell -Command "
-          if (Test-Path 'C:\\inetpub\\backupReact-App\\*') {
-            Remove-Item -Path 'C:\\inetpub\\deplyreact\\*' -Recurse -Force;
-            Copy-Item -Path 'C:\\inetpub\\backupReact-App\\*' -Destination 'C:\\inetpub\\deplyreact\\' -Recurse -Force;
-          } else {
-            Write-Host 'No backup available for rollback.';
-          }
-          "
+          $limit = (Get-Date).AddDays(-30)
+          Get-ChildItem "C:\inetpub\react_backups\" | 
+          Where-Object { $_.CreationTime -lt $limit } | 
+          Remove-Item -Recurse -Force
+        shell: powershell
