@@ -1,0 +1,34 @@
+name: Rollback React App
+
+on:
+  workflow_dispatch:
+    inputs:
+      backupId:
+        description: 'ID del backup (ej: 20240522-153045)'
+        required: true
+
+jobs:
+  rollback:
+    runs-on: self-hosted
+    
+    steps:
+      - name: Validate backup
+        run: |
+          $backupDir = "C:\inetpub\react_backups\${{ github.event.inputs.backupId }}"
+          if (-not (Test-Path "$backupDir")) {
+              Write-Host "Error: Backup ${{ github.event.inputs.backupId }} no encontrado"
+              exit 1
+          }
+        shell: powershell
+
+      - name: Restore from backup
+        run: |
+          powershell -Command "
+          $backupDir = 'C:\inetpub\react_backups\${{ github.event.inputs.backupId }}'
+          Remove-Item -Path 'C:\inetpub\deplyreact\*' -Recurse -Force
+          Copy-Item -Path "$backupDir\*" -Destination 'C:\inetpub\deplyreact\' -Recurse -Force
+          "
+        
+      - name: Confirm rollback
+        run: |
+          echo "Rollback completado a la versión ${{ github.event.inputs.backupId }}"
