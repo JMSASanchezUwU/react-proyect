@@ -12,23 +12,25 @@ jobs:
     runs-on: self-hosted
     
     steps:
-      - name: Validate backup
+      - name: Validar existencia del backup
         run: |
-          $backupDir = "C:\inetpub\react_backups\${{ github.event.inputs.backupId }}"
-          if (-not (Test-Path "$backupDir")) {
-              Write-Host "Error: Backup ${{ github.event.inputs.backupId }} no encontrado"
+          $backupPath = "C:\inetpub\react_backups\${{ github.event.inputs.backupId }}"
+          if (-not (Test-Path $backupPath)) {
+              Write-Host "::error::Backup ${{ github.event.inputs.backupId }} no existe"
               exit 1
           }
         shell: powershell
 
-      - name: Restore from backup
+      - name: Restaurar versión
         run: |
-          powershell -Command "
-          $backupDir = 'C:\inetpub\react_backups\${{ github.event.inputs.backupId }}'
-          Remove-Item -Path 'C:\inetpub\deplyreact\*' -Recurse -Force
-          Copy-Item -Path "$backupDir\*" -Destination 'C:\inetpub\deplyreact\' -Recurse -Force
-          "
-        
-      - name: Confirm rollback
-        run: |
-          echo "Rollback completado a la versión ${{ github.event.inputs.backupId }}"
+          $backupDir = "C:\inetpub\react_backups\${{ github.event.inputs.backupId }}"
+          $deployPath = "C:\inetpub\deplyreact"
+
+          # Eliminar contenido actual (con permisos elevados)
+          Remove-Item -Path "$deployPath\*" -Recurse -Force -ErrorAction Stop
+
+          # Copiar desde backup
+          Copy-Item -Path "$backupDir\*" -Destination $deployPath -Recurse -Force -ErrorAction Stop
+
+          Write-Host "Rollback exitoso a ${{ github.event.inputs.backupId }}"
+        shell: powershell
