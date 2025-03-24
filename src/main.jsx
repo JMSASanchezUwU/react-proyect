@@ -7,7 +7,7 @@ import VulnerableComponent from './pages/VulnerableComponent.jsx'
 
 createRoot(document.getElementById('root')).render(
   
-   <App />
+   <Estado />
    
  
  ,

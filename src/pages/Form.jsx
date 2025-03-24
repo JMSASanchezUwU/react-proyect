@@ -25,6 +25,16 @@ const Form = () => {
       return;
     }
     const newUser = { name, email };
+
+    axios.post('http://localhost:1790/api/Users', newUser)
+      .then(response => {
+      console.log('Success:', response.data);
+      setUsers([...users, newUser]);
+      })
+      .catch(error => {
+      console.error('Error:', error);
+      });
+
     setUsers([...users, newUser]);
     setName('');
     setEmail('');
